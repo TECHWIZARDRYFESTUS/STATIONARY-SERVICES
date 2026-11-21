@@ -46,7 +46,13 @@ Open http://127.0.0.1:8000/login. Customer registration is at `/register`; after
 The app creates `printbiz.db` automatically and seeds example services/products on first run.
 Set a long, random `SESSION_SECRET` in `.env` before using persistent sessions. `SESSION_COOKIE_SECURE=false` is for local HTTP only; set it to `true` behind HTTPS. The first administrator is created interactively with `python -m app.create_admin`; admins can then create staff accounts. Customers can self-register from the sign-in page.
 
-If you forget the local administrator password or need to change the admin login email, run `.\.venv\Scripts\python.exe -m app.reset_admin` from the project folder. On Render, run `python -m app.reset_admin` in the service Shell after the command has been deployed. Enter the current admin email, optional new email, and new password in the prompts; password input is hidden. Passwords remain one-way hashed and must never be committed or sent in chat.
+To reset the administrator password or change the admin login email locally, activate the project's virtual environment and run:
+
+```powershell
+python -m app.reset_admin
+```
+
+On Render, run the same command in the service Shell after the reset command has been deployed. Enter the current admin email, optional new email, and new password at the prompts. Password input is hidden; the password is not printed or stored in this README. Passwords remain one-way hashed and must never be committed or sent in chat.
 
 Administrators can update service unit prices in **Services & pricing**, and product cost/selling prices in **Inventory**. T-shirt prices are quoted per customer order.
 
