@@ -12,7 +12,7 @@ def main() -> None:
             raise SystemExit("An administrator already exists. Sign in with an admin account.")
         name = input("Administrator name: ").strip()
         email = input("Administrator email: ").strip().lower()
-        password = getpass("Password (at least 12 characters): ")
+        password = getpass("Password (12-72 UTF-8 bytes): ")
         confirmation = getpass("Confirm password: ")
         if len(name) < 2:
             raise SystemExit("Name must contain at least 2 characters.")
@@ -20,6 +20,8 @@ def main() -> None:
             raise SystemExit("Enter a valid email address.")
         if len(password) < 12:
             raise SystemExit("Password must contain at least 12 characters.")
+        if len(password.encode("utf-8")) > 72:
+            raise SystemExit("Password must contain no more than 72 UTF-8 bytes for bcrypt.")
         if password != confirmation:
             raise SystemExit("Passwords do not match.")
         if db.query(models.User).filter_by(email=email).first():

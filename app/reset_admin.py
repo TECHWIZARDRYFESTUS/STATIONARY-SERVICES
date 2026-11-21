@@ -16,13 +16,15 @@ def main() -> None:
 
     current_email = input("Current administrator email: ").strip().lower()
     new_email = (args.new_email or current_email).strip().lower()
-    password = getpass("New password (at least 12 characters): ")
+    password = getpass("New password (12-72 UTF-8 bytes): ")
     confirmation = getpass("Confirm new password: ")
 
     if "@" not in new_email or len(new_email) > 160 or any(char.isspace() for char in new_email):
         raise SystemExit("Enter a valid email address.")
     if len(password) < 12:
         raise SystemExit("Password must contain at least 12 characters.")
+    if len(password.encode("utf-8")) > 72:
+        raise SystemExit("Password must contain no more than 72 UTF-8 bytes for bcrypt.")
     if password != confirmation:
         raise SystemExit("Passwords do not match.")
 

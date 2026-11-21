@@ -5,19 +5,27 @@ import json
 import secrets
 import time
 
+import bcrypt
+
 PASSWORD_ITERATIONS = 600_000
 
 def hash_password(password: str) -> str:
-    salt = secrets.token_bytes(16)
-    digest = hashlib.pbkdf2_hmac("sha256", password.encode("utf-8"), salt, PASSWORD_ITERATIONS)
-    return "$".join((
-        "pbkdf2_sha256",
-        str(PASSWORD_ITERATIONS),
-        base64.urlsafe_b64encode(salt).decode("ascii"),
-        base64.urlsafe_b64encode(digest).decode("ascii"),
-    ))
+    encoded_password = password.encode("utf-8")
+    if len(encoded_password) > 72:
+        raise ValueError("Password must be no more than 72 UTF-8 bytes for bcrypt.")
+    return bcrypt.hashpw(encoded_password, bcrypt.gensalt()).decode("ascii")
 
 def verify_password(password: str, password_hash: str) -> bool:
+    if password_hash.startswith(("$2a$", "$2b$", "$2y$")):
+        try:
+            encoded_password = password.encode("utf-8")
+            return len(encoded_password) <= 72 and bcrypt.checkpw(
+                encoded_password,
+                password_hash.encode("ascii"),
+            )
+        except (ValueError, TypeError, UnicodeEncodeError):
+            return False
+
     try:
         algorithm, iterations, encoded_salt, encoded_digest = password_hash.split("$")
         if algorithm != "pbkdf2_sha256":

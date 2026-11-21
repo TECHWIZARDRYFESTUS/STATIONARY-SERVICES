@@ -52,6 +52,8 @@ To reset the administrator password or change the admin login email locally, act
 python -m app.reset_admin
 ```
 
+New passwords are stored as bcrypt hashes; existing PBKDF2 hashes remain supported so existing accounts can still sign in. Use passwords of at least 12 characters and no more than 72 UTF-8 bytes.
+
 On Render, run the same command in the service Shell after the reset command has been deployed. Enter the current admin email and new password twice; password input is hidden. To change the login email too, run `python -m app.reset_admin --new-email new-address@example.com`. Passwords remain one-way hashed and must never be committed or sent in chat.
 
 Administrators can update service unit prices in **Services & pricing**, and product cost/selling prices in **Inventory**. T-shirt prices are quoted per customer order.

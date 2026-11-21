@@ -1,5 +1,19 @@
-from pydantic import BaseModel, Field
-from typing import Literal, Optional
+from pydantic import AfterValidator, BaseModel, Field
+from typing import Annotated, Literal, Optional
+
+
+def _validate_bcrypt_password_length(password: str) -> str:
+    if len(password.encode("utf-8")) > 72:
+        raise ValueError("Password must be no more than 72 UTF-8 bytes.")
+    return password
+
+
+BcryptPassword = Annotated[
+    str,
+    Field(min_length=12, max_length=256),
+    AfterValidator(_validate_bcrypt_password_length),
+]
+
 
 class CustomerIn(BaseModel):
     name: str = Field(min_length=2, max_length=160)
@@ -88,19 +102,19 @@ class LoginIn(BaseModel):
 
 class PasswordChangeIn(BaseModel):
     current_password: str = Field(min_length=1, max_length=256)
-    new_password: str = Field(min_length=12, max_length=256)
+    new_password: BcryptPassword
 
 class CustomerRegistrationIn(BaseModel):
     name: str = Field(min_length=2, max_length=160)
     phone: str = Field(min_length=5, max_length=40)
     email: str = Field(min_length=3, max_length=160)
-    password: str = Field(min_length=12, max_length=256)
+    password: BcryptPassword
     whatsapp_updates: bool = False
 
 class StaffUserIn(BaseModel):
     name: str = Field(min_length=2, max_length=160)
     email: str = Field(min_length=3, max_length=160)
-    password: str = Field(min_length=12, max_length=256)
+    password: BcryptPassword
 
 class UserActiveIn(BaseModel):
     active: bool
