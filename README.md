@@ -52,7 +52,7 @@ To reset the administrator password or change the admin login email locally, act
 python -m app.reset_admin
 ```
 
-On Render, run the same command in the service Shell after the reset command has been deployed. Enter the current admin email, optional new email, and new password at the prompts. Password input is hidden; the password is not printed or stored in this README. Passwords remain one-way hashed and must never be committed or sent in chat.
+On Render, run the same command in the service Shell after the reset command has been deployed. Enter the current admin email and new password twice; password input is hidden. To change the login email too, run `python -m app.reset_admin --new-email new-address@example.com`. Passwords remain one-way hashed and must never be committed or sent in chat.
 
 Administrators can update service unit prices in **Services & pricing**, and product cost/selling prices in **Inventory**. T-shirt prices are quoted per customer order.
 

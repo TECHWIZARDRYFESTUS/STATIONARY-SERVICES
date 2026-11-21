@@ -1,3 +1,4 @@
+import argparse
 from getpass import getpass
 
 from . import models
@@ -6,9 +7,15 @@ from .database import SessionLocal
 
 
 def main() -> None:
+    parser = argparse.ArgumentParser(description="Reset an administrator password.")
+    parser.add_argument(
+        "--new-email",
+        help="also change the administrator login email",
+    )
+    args = parser.parse_args()
+
     current_email = input("Current administrator email: ").strip().lower()
-    new_email = input("New administrator email (leave blank to keep current): ").strip().lower()
-    new_email = new_email or current_email
+    new_email = (args.new_email or current_email).strip().lower()
     password = getpass("New password (at least 12 characters): ")
     confirmation = getpass("Confirm new password: ")
 
