@@ -8,6 +8,7 @@ OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-4.1-mini")
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./printbiz.db")
 UPLOAD_DIR = os.getenv("UPLOAD_DIR", "uploads")
 SESSION_SECRET = os.getenv("SESSION_SECRET", "")
+ADMIN_RESET_TOKEN = os.getenv("ADMIN_RESET_TOKEN", "")
 SESSION_COOKIE_SECURE = os.getenv("SESSION_COOKIE_SECURE", "false").lower() == "true"
 SESSION_TTL_SECONDS = int(os.getenv("SESSION_TTL_SECONDS", "28800"))
 WHATSAPP_ACCESS_TOKEN = os.getenv("WHATSAPP_ACCESS_TOKEN", "")

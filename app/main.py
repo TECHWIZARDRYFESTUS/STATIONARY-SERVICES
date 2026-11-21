@@ -1,4 +1,4 @@
-import logging, os, secrets, shutil
+import hashlib, hmac, logging, os, secrets, shutil
 from io import BytesIO
 from pathlib import Path
 from typing import Literal
@@ -8,6 +8,7 @@ from fastapi.responses import FileResponse, RedirectResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
 from sqlalchemy import func, inspect, text
+from sqlalchemy.exc import IntegrityError
 from docx import Document as WordDocument
 from docx.shared import Pt
 from .database import Base, engine, get_db
@@ -31,6 +32,7 @@ from .config import (
     SESSION_COOKIE_SECURE,
     SESSION_SECRET,
     SESSION_TTL_SECONDS,
+    ADMIN_RESET_TOKEN,
 )
 from .notifications import send_job_completed_whatsapp
 
@@ -203,6 +205,12 @@ def home():
 def login_page():
     return FileResponse("app/static/login.html")
 
+@app.get("/admin-recovery", include_in_schema=False)
+def admin_recovery_page():
+    if len(ADMIN_RESET_TOKEN.encode("utf-8")) < 32:
+        raise HTTPException(404, "Not found.")
+    return FileResponse("app/static/admin-recovery.html")
+
 @app.get("/register")
 def register_page():
     return FileResponse("app/static/register.html")
@@ -236,6 +244,55 @@ def login(data: schemas.LoginIn, response: Response, db: Session=Depends(get_db)
         path="/",
     )
     return user_payload(user)
+
+@app.post("/api/recovery/admin-password", include_in_schema=False)
+def recover_admin_password(
+    data: schemas.AdminRecoveryIn,
+    response: Response,
+    db: Session = Depends(get_db),
+):
+    if len(ADMIN_RESET_TOKEN.encode("utf-8")) < 32:
+        raise HTTPException(404, "Not found.")
+    if not hmac.compare_digest(
+        data.recovery_token.encode("utf-8"),
+        ADMIN_RESET_TOKEN.encode("utf-8"),
+    ):
+        raise HTTPException(401, "Recovery token is invalid.")
+
+    current_email = data.current_email.strip().lower()
+    new_email = (data.new_email or current_email).strip().lower()
+    if any(char.isspace() for char in current_email) or "@" not in current_email:
+        raise HTTPException(422, "Enter a valid current administrator email.")
+    if any(char.isspace() for char in new_email) or "@" not in new_email:
+        raise HTTPException(422, "Enter a valid new administrator email.")
+
+    token_fingerprint = hashlib.sha256(data.recovery_token.encode("utf-8")).hexdigest()
+    if db.get(models.AdminResetTokenUse, token_fingerprint):
+        raise HTTPException(409, "This recovery token has already been used.")
+
+    account = db.query(models.User).filter_by(email=current_email, role="admin").first()
+    if not account:
+        raise HTTPException(404, "No administrator account found with that email.")
+    if new_email != current_email and db.query(models.User).filter_by(email=new_email).first():
+        raise HTTPException(409, "Another account already uses the new email address.")
+
+    account.email = new_email
+    account.password_hash = hash_password(data.new_password)
+    db.add(models.AdminResetTokenUse(token_fingerprint=token_fingerprint))
+    db.add(models.AuditLog(
+        action="admin.credentials_reset_via_web",
+        details=f"user_id={account.id}",
+    ))
+    try:
+        db.commit()
+    except IntegrityError as error:
+        db.rollback()
+        if db.get(models.AdminResetTokenUse, token_fingerprint):
+            raise HTTPException(409, "This recovery token has already been used.") from error
+        raise
+
+    response.headers["Cache-Control"] = "no-store"
+    return {"status": "credentials_updated", "email": new_email}
 
 @app.post("/api/auth/logout")
 def logout(response: Response):

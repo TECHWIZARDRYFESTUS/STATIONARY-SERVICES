@@ -116,6 +116,12 @@ class StaffUserIn(BaseModel):
     email: str = Field(min_length=3, max_length=160)
     password: BcryptPassword
 
+class AdminRecoveryIn(BaseModel):
+    recovery_token: str = Field(min_length=32, max_length=256)
+    current_email: str = Field(min_length=3, max_length=160)
+    new_email: str | None = Field(default=None, min_length=3, max_length=160)
+    new_password: BcryptPassword
+
 class UserActiveIn(BaseModel):
     active: bool
 

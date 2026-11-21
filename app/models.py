@@ -125,6 +125,11 @@ class AuditLog(Base):
     details: Mapped[str] = mapped_column(Text, default="")
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
+class AdminResetTokenUse(Base):
+    __tablename__ = "admin_reset_token_uses"
+    token_fingerprint: Mapped[str] = mapped_column(String(64), primary_key=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
 class JobUpdate(Base):
     __tablename__ = "job_updates"
     id: Mapped[int] = mapped_column(primary_key=True)

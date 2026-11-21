@@ -56,6 +56,16 @@ New passwords are stored as bcrypt hashes; existing PBKDF2 hashes remain support
 
 On Render, run the same command in the service Shell after the reset command has been deployed. Enter the current admin email and new password twice; password input is hidden. To change the login email too, run `python -m app.reset_admin --new-email new-address@example.com`. Passwords remain one-way hashed and must never be committed or sent in chat.
 
+If the Render plan does not include Shell access, use the one-time web recovery instead:
+
+1. Deploy the latest application code.
+2. Generate a private token locally with `python -c "import secrets; print(secrets.token_urlsafe(32))"`.
+3. In the Render service's **Environment** settings, add `ADMIN_RESET_TOKEN` with that token and wait for the service to redeploy.
+4. Open `https://<your-service>.onrender.com/admin-recovery` and enter the token, current admin email, and a new password. The new email is optional.
+5. After success, remove `ADMIN_RESET_TOKEN` from Render's Environment settings. The token can only be used once; its fingerprint is recorded in the database.
+
+The recovery page and endpoint are disabled unless a token of at least 32 bytes is configured. Do not share the token or password. If this deployed service has no existing administrator account, this recovery flow cannot create one.
+
 Administrators can update service unit prices in **Services & pricing**, and product cost/selling prices in **Inventory**. T-shirt prices are quoted per customer order.
 
 ## Optional AI setup
