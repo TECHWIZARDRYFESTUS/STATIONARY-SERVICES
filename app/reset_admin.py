@@ -6,10 +6,14 @@ from .database import SessionLocal
 
 
 def main() -> None:
-    email = input("Administrator email: ").strip().lower()
+    current_email = input("Current administrator email: ").strip().lower()
+    new_email = input("New administrator email (leave blank to keep current): ").strip().lower()
+    new_email = new_email or current_email
     password = getpass("New password (at least 12 characters): ")
     confirmation = getpass("Confirm new password: ")
 
+    if "@" not in new_email or len(new_email) > 160 or any(char.isspace() for char in new_email):
+        raise SystemExit("Enter a valid email address.")
     if len(password) < 12:
         raise SystemExit("Password must contain at least 12 characters.")
     if password != confirmation:
@@ -17,16 +21,19 @@ def main() -> None:
 
     db = SessionLocal()
     try:
-        account = db.query(models.User).filter_by(email=email, role="admin").first()
+        account = db.query(models.User).filter_by(email=current_email, role="admin").first()
         if not account:
-            raise SystemExit("No administrator account found with that email.")
+            raise SystemExit("No administrator account found with the current email.")
+        if new_email != current_email and db.query(models.User).filter_by(email=new_email).first():
+            raise SystemExit("Another account already uses the new email address.")
+        account.email = new_email
         account.password_hash = hash_password(password)
         db.add(models.AuditLog(
-            action="admin.password_reset",
+            action="admin.credentials_reset",
             details=f"user_id={account.id}",
         ))
         db.commit()
-        print(f"Password reset for administrator {email}. Sign in with your new password.")
+        print(f"Administrator credentials updated for {new_email}. Sign in with the new email and password.")
     finally:
         db.close()
 
